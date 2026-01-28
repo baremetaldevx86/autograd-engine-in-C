@@ -89,7 +89,7 @@ This confirms the engine correctly performs forward propagation, backpropagation
 
 ---
 
-## 🛠 Build
+## Build
 
 Requires:
 - GCC
