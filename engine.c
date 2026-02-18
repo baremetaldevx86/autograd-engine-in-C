@@ -1,4 +1,6 @@
 #include "engine.h"
+#include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 // ============================================================
@@ -50,7 +52,7 @@ static void list_free(TensorList* l) {
 
 static int is_visited(Tensor** visited, int count, Tensor* t) {
     for (int i = 0; i < count; i++) {
-        if (visited[i] == t) return 1;
+        if (visited[i] == t)return 1;
     }
     return 0;
 }
@@ -310,7 +312,31 @@ static void matmul_backward(Tensor* C) {
     }
 }
 
+static void div_backward(Tensor* self) {
+    Tensor* a = self->parents[0];
+    Tensor* b = self->parents[1];
 
+    for (int i = 0; i < self->size; i++) {
+        float grad = self->grad[i];
+        float av = a->data[i];
+        float bv = b->data[i];
+
+        a->grad[i] += grad / bv;
+        b->grad[i] += -av * grad / (bv * bv);
+    }
+    
+}
+
+static void sqrt_backward(Tensor* self) {
+    Tensor* a = self->parents[0];
+
+    for(int i = 0; i < self->size; i++) {
+        float grad = self->grad[i];
+        float y = self->data[i];
+
+        a->grad[i] += grad / (2 * y);
+    }
+}
 
 // ============================================================
 // Forward ops
@@ -406,6 +432,13 @@ Tensor* tensor_mean(Tensor *a) {
 
 Tensor* tensor_mul(Tensor* a, Tensor* b) {
     Tensor* c;
+
+    if (a->size != b->size) {
+        printf("tensor_mul shape mismatch\n");
+        exit(1);
+    }
+
+
     if (a->ndim == 0 && b->ndim == 0) {
         c = tensor_create(0.0f);
     } else {
@@ -427,6 +460,61 @@ Tensor* tensor_mul(Tensor* a, Tensor* b) {
 
     c->backward = mul_backward;
     return c;
+}
+
+Tensor* tensor_div(Tensor* a, Tensor* b) {
+
+    if(a->size != b->size) {
+        printf("tensor_div shape mismatch");
+        exit(1);
+    }
+
+    Tensor* c;
+    
+    if(a->ndim == 0 && b->ndim == 0) {
+        c = tensor_create(0.0f);
+    } else {
+        int rows = a->shape[0];
+        int cols = a->shape[1];
+        c = tensor_create_matrix(rows, cols);
+    }
+
+    for(int i = 0; i < a->size; i++) {
+        c->data[i] = a->data[i] / b->data[i];
+    }
+
+    c->n_parents = 2;
+    c->parents = (Tensor**)malloc(sizeof(Tensor*) * 2);
+    c->parents[0] = a;
+    c->parents[1] = b;
+    tensor_retain(a);
+    tensor_retain(b);
+
+    c->backward = div_backward;
+    return c;
+    
+}
+
+Tensor* tensor_sqrt(Tensor* a) {
+    Tensor* c;
+    
+    if(a->ndim == 0){
+        c = tensor_create(0.0f);
+    } else {
+        c = tensor_create_matrix(a->shape[0], a->shape[1]);
+    }
+    
+    for(int i = 0; i < a->size; i++) {
+        c->data[i] = sqrt(a->data[i]);
+    }
+
+    c->n_parents = 1;
+    c->parents = (Tensor**)malloc(sizeof(Tensor*));
+    c->parents[0] = a;
+    tensor_retain(a);
+
+    c->backward = sqrt_backward;
+    return  c;
 }
 
 Tensor* tensor_pow(Tensor* a, Tensor* b) {
@@ -570,6 +658,11 @@ void tensor_backward(Tensor* t) {
     // We'd need to resize visited if we overflow, but for now let's just assert or expand
     // Actually simplicity:
     build_topo(t, topo, visited, &visited_count);
+    
+    // ZERO ALL GRADS
+    for (int i = 0; i < topo->size; i++) {
+        tensor_zero_grad(topo->items[i]);
+    }
 
     // seed gradient
     if (t->size == 1) {

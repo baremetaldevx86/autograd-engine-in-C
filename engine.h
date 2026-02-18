@@ -49,6 +49,8 @@ Tensor* tensor_Tanh(Tensor* a);
 Tensor* tensor_matmul(Tensor* A, Tensor* B);
 Tensor* tensor_sub(Tensor* a, Tensor* b);
 Tensor* tensor_mean(Tensor* a);
+Tensor* tensor_div(Tensor* a, Tensor* b);
+Tensor* tensor_sqrt(Tensor* a);
 
 //
 // Backward engine
