@@ -3,6 +3,7 @@
 A from-scratch automatic differentiation engine written in pure C. No frameworks. No dependencies. No Python. Just raw C, manual memory management, and reverse-mode autodiff.
 
 Trains a 3-layer MLP on MNIST from raw pixels and reaches **98.01% test accuracy** -- all in ~1,150 lines of library code.
+<img width="823" height="800" alt="mnist-training" src="https://github.com/user-attachments/assets/19be4b49-53a6-48c2-8fef-c97fa4f75771" />
 
 ---
 
