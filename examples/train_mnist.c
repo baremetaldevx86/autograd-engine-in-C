@@ -123,10 +123,12 @@ int main(void) {
 
     for (int epoch = 0; epoch < EPOCHS; epoch++) {
 
-        /* LR decay */
+        // LR decay
         float lr = BASE_LR;
-        //if (epoch >= 10) lr *= 0.01f;
-        //else if (epoch >= 5) lr *= 0.1f;
+        if (epoch >= 25)
+            lr *= 0.01f;
+        else if (epoch >= 15)
+            lr *= 0.1f;
         sgd_set_lr(opt, lr);
 
         shuffle_indices(indices, train->n_samples);

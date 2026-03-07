@@ -655,8 +655,6 @@ void tensor_backward(Tensor* t) {
     int visited_count = 0;
     Tensor** visited = (Tensor**)malloc(sizeof(Tensor*) * capacity);
 
-    // We'd need to resize visited if we overflow, but for now let's just assert or expand
-    // Actually simplicity:
     build_topo(t, topo, visited, &visited_count);
     
     // ZERO ALL GRADS
@@ -679,7 +677,7 @@ void tensor_backward(Tensor* t) {
             node->backward(node);
         }
     }
-    
+
     // cleanup topo list
     free(visited);
     list_free(topo);
